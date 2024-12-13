@@ -2,31 +2,33 @@ import axios from "axios";
 import React, { useState } from "react";
 
 const App = () => {
-  const API_KEY = "AIzaSyBUt_rOkHDpGtiS2KFxOr05k4CiSsv_AzQ";
   const [question, setQuestion] = useState("");
   const [chatLog, setChatLog] = useState([]);
+
   async function getResponse() {
-    if (!question.trim()) return;
+    if (!question.trim()) return; // Empty check
+
     try {
-      const response = await axios({
-        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`,
-        method: "post",
-        data: {
-          contents: [
-            {
-              parts: [{ text: question }],
-            },
-          ],
-        },
-      });
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText?key=${process.env.REACT_APP_API_KEY}`,
+        {
+          prompt: { text: question },
+          temperature: 0.7,
+          maxOutputTokens: 256,
+        }
+      );
 
       const aiResponse =
-        response?.data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
-      
-      setChatLog((prevChat) => [...prevChat, { sender: "You", text: question }, { sender: "AI", text: aiResponse }]);
-      setQuestion(""); 
+        response.data?.candidates?.[0]?.output || "No response";
+
+      setChatLog((prevChat) => [
+        ...prevChat,
+        { sender: "You", text: question },
+        { sender: "AI", text: aiResponse },
+      ]);
+      setQuestion(""); // Reset the input
     } catch (error) {
-      console.error("Error fetching response:", error);
+      console.error("Error fetching response:", error?.response || error);
     }
   }
 
@@ -34,10 +36,17 @@ const App = () => {
     <div className="w-screen h-screen flex flex-col bg-[#e0e0e0] font-mono">
       <div className="flex-1 p-4 overflow-y-scroll">
         {chatLog.map((message, index) => (
-          <div key={index} className={`mb-7 ${message.sender === "AI" ? "text-left" : "text-right"}`}>
+          <div
+            key={index}
+            className={`mb-7 ${
+              message.sender === "AI" ? "text-left" : "text-right"
+            }`}
+          >
             <p
               className={`inline-block p-3 rounded-lg ${
-                message.sender === "AI" ? "bg-purple-400 text-black, rounded-[19px], shadow-[7px_7px_11px_#bebebe,-7px_-7px_11px_#ffffff]" : "bg-pink-400 text-black rounded-[19px] shadow-[7px_7px_11px_#bebebe,-7px_-7px_11px_#ffffff]"
+                message.sender === "AI"
+                  ? "bg-purple-400 text-black shadow-[7px_7px_11px_#bebebe,-7px_-7px_11px_#ffffff]"
+                  : "bg-pink-400 text-black shadow-[7px_7px_11px_#bebebe,-7px_-7px_11px_#ffffff]"
               }`}
             >
               <strong>{message.sender}: </strong>
